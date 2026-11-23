@@ -1,0 +1,202 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  email           String    @unique
+  passwordHash    String
+  role            String    @default("user") // "user" | "admin"
+  onboardingRole  String?
+  timezone        String    @default("Africa/Lagos")
+  defaultVoice    String    @default("friendly")
+  brandColor      String    @default("#2F6FEB")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  sessions        Session[]
+  subscriptions   Subscription[]
+  videos          Video[]
+  documents       Document[]
+  payments        Payment[]
+  usageLedger     UsageLedger[]
+  dailyUsage      DailyUsage[]
+  auditLogs       AuditLog[] @relation("AuditActor")
+}
+
+model Session {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Plan {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  name             String   @unique // Free, Starter, Pro, Business
+  dailyVideos      Int
+  maxLengthSeconds Int
+  watermark        Boolean  @default(true)
+  teamSeats        Int      @default(1)
+  priceNgn         Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  subscriptions    Subscription[]
+  payments         Payment[]
+}
+
+model Payment {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String    @db.ObjectId
+  planId          String    @db.ObjectId
+  reference       String    @unique // OMN-XXXXX
+  status          String    // pending | approved | rejected | refunded
+  amount          Int
+  amountReceived  Int?
+  currency        String    @default("NGN")
+  senderName      String?
+  transferDate    DateTime?
+  receiptKey      String?
+  rejectionReason String?
+  adminNote       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id])
+  plan            Plan      @relation(fields: [planId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Subscription {
+  id                 String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId             String    @db.ObjectId
+  planId             String    @db.ObjectId
+  status             String    // active | expired | cancelled
+  currentPeriodEnd   DateTime?
+  remindersCancelled Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan               Plan      @relation(fields: [planId], references: [id])
+
+  @@index([userId])
+}
+
+model UsageLedger {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  localDate  String   // YYYY-MM-DD in user timezone
+  eventType  String   // consume | refund
+  videoId    String?  @db.ObjectId
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, localDate])
+}
+
+model DailyUsage {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  localDate String
+  count     Int      @default(0)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, localDate])
+  @@index([userId])
+}
+
+model Video {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String   @db.ObjectId
+  title          String?
+  status         String   // draft | generating | ready | failed
+  targetSeconds  Int
+  style          String   @default("classic")
+  voice          String   @default("friendly")
+  watermark      Boolean  @default(true)
+  outputKey      String?
+  scriptApproved Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id])
+  scenes         Scene[]
+  jobs           VideoJob[]
+
+  @@index([userId])
+}
+
+model Scene {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  videoId     String   @db.ObjectId
+  order       Int
+  text        String
+  imagePrompt String?
+  drawData    Json?
+  video       Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([videoId])
+}
+
+model VideoJob {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  videoId   String   @db.ObjectId
+  stage     String   // script | scenes | voice | render | done | failed
+  error     String?
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([videoId])
+}
+
+model Document {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @db.ObjectId
+  originalName  String
+  mime          String
+  size          Int
+  storageKey    String
+  extractedText String?
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model AdminSettings {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  key           String   @unique @default("default")
+  bankName      String   @default("REPLACE_ME")
+  accountName   String   @default("REPLACE_ME")
+  accountNumber String   @default("REPLACE_ME")
+  supportEmail  String   @default("support@omnia.ai")
+  updatedAt     DateTime @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  actorId    String   @db.ObjectId
+  action     String
+  targetType String?
+  targetId   String?
+  details    Json?
+  createdAt  DateTime @default(now())
+  actor      User     @relation("AuditActor", fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([createdAt])
+}
