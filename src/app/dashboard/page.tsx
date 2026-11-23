@@ -69,7 +69,7 @@ export default function DashboardPage() {
         className={`inline-block px-6 py-3 rounded-btn font-medium ${
           atLimit ? "bg-soft-gray text-ink cursor-not-allowed" : "bg-marker-blue text-white"
         }`}
-        aria-disabled={atLimit}
+        aria-disabled={Boolean(atLimit)}
       >
         {atLimit ? "Daily limit reached" : "Create new video"}
       </Link>
