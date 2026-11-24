@@ -2,9 +2,29 @@
 
 import { useEffect, useState } from "react";
 
+interface AdminUser {
+  id: string;
+  email: string;
+  role: string;
+}
+
+interface PendingPayment {
+  id: string;
+  reference: string;
+  amount: number;
+  senderName: string | null;
+  transferDate: string | null;
+  user: { email: string };
+  plan: { name: string };
+}
+
+interface AdminOverview {
+  users: AdminUser[];
+}
+
 export default function AdminPage() {
-  const [data, setData] = useState<any>(null);
-  const [payments, setPayments] = useState<any[]>([]);
+  const [data, setData] = useState<AdminOverview | null>(null);
+  const [payments, setPayments] = useState<PendingPayment[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -89,7 +109,7 @@ export default function AdminPage() {
       <section>
         <h2 className="text-xl font-heading mb-2">Users</h2>
         <ul className="space-y-1">
-          {data.users?.map((u: any) => (
+          {data.users.map((u) => (
             <li key={u.id}>{u.email} ({u.role})</li>
           ))}
         </ul>

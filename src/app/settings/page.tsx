@@ -2,8 +2,14 @@
 
 import { useEffect, useState } from "react";
 
+interface AccountDetails {
+  email: string;
+  timezone: string;
+  onboardingRole: string | null;
+}
+
 export default function SettingsPage() {
-  const [me, setMe] = useState<any>(null);
+  const [me, setMe] = useState<AccountDetails | null>(null);
   const [msg, setMsg] = useState("");
 
   useEffect(() => {
@@ -35,4 +41,3 @@ export default function SettingsPage() {
     </main>
   );
 }
-

@@ -1,0 +1,50 @@
+envVarGroups:
+  - name: omnia-ai-production
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+
+services:
+  - type: web
+    name: omnia-ai-web
+    runtime: docker
+    plan: 0.5c-512mb
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - fromGroup: omnia-ai-production
+      - key: NODE_ENV
+        value: production
+      - key: STUB_MODE
+        value: "true"
+
+  - type: worker
+    name: omnia-ai-worker
+    runtime: docker
+    plan: 1c-2g
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: npm run worker
+    envVars:
+      - fromGroup: omnia-ai-production
+      - key: NODE_ENV
+        value: production
+      - key: STUB_MODE
+        value: "true"

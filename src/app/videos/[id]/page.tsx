@@ -3,18 +3,26 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
+interface VideoDetails {
+  id: string;
+  title: string | null;
+  status: string;
+  outputKey: string | null;
+  scenes: { id: string; text: string }[];
+}
+
 export default function VideoPage() {
-  const params = useParams();
-  const [video, setVideo] = useState<any>(null);
+  const params = useParams<{ id: string }>();
+  const [video, setVideo] = useState<VideoDetails | null>(null);
 
   useEffect(() => {
-    const id = params.id as string;
+    const id = params.id;
     const poll = async () => {
       const res = await fetch(`/api/videos`);
       if (res.ok) {
-        const data = await res.json();
-        const v = data.videos.find((x: any) => x.id === id);
-        setVideo(v);
+        const data: { videos: VideoDetails[] } = await res.json();
+        const v = data.videos.find((x) => x.id === id);
+        setVideo(v ?? null);
         if (v && (v.status === "generating" || v.status === "draft")) {
           setTimeout(poll, 2000);
         }
@@ -43,7 +51,7 @@ export default function VideoPage() {
       <div className="mt-8">
         <h2 className="font-heading text-xl mb-2">Scenes</h2>
         <ul className="space-y-2">
-          {video.scenes?.map((s: any) => (
+          {video.scenes.map((s) => (
             <li key={s.id} className="p-3 bg-white rounded-card border">{s.text}</li>
           ))}
         </ul>

@@ -26,7 +26,7 @@ describe("amount mismatch rule", () => {
     const planAmount = 5000;
     const received = 4500;
     const note = "";
-    const valid = received === planAmount || (note && note.length > 0);
+    const valid = received === planAmount || Boolean(note && note.length > 0);
     expect(valid).toBe(false);
   });
 
@@ -34,7 +34,7 @@ describe("amount mismatch rule", () => {
     const planAmount = 5000;
     const received = 5000;
     const note = "";
-    const valid = received === planAmount || (note && note.length > 0);
+    const valid = received === planAmount || Boolean(note && note.length > 0);
     expect(valid).toBe(true);
   });
 });

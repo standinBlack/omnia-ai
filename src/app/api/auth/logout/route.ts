@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { clearSession } from "@/lib/auth";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   const cookieStore = await cookies();
   const token = cookieStore.get("omnia_session")?.value;
   await clearSession(token);

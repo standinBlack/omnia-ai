@@ -80,7 +80,22 @@ class S3Storage implements StorageAdapter {
 }
 
 export function getStorage(): StorageAdapter {
-  if (process.env.S3_ENDPOINT && process.env.S3_BUCKET && process.env.S3_ACCESS_KEY_ID) {
+  const keys = [
+    "S3_ENDPOINT",
+    "S3_BUCKET",
+    "S3_ACCESS_KEY_ID",
+    "S3_SECRET_ACCESS_KEY",
+  ];
+  const configured = keys.filter((key) => process.env[key]);
+  const missing = keys.filter((key) => !process.env[key]);
+
+  if (configured.length > 0 && missing.length > 0) {
+    throw new Error(`Incomplete object storage configuration; missing: ${missing.join(", ")}`);
+  }
+  if (process.env.NODE_ENV === "production" && missing.length > 0) {
+    throw new Error(`Object storage is required in production; missing: ${missing.join(", ")}`);
+  }
+  if (missing.length === 0) {
     return new S3Storage();
   }
   return new LocalStorage();

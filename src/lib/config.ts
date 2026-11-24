@@ -5,22 +5,31 @@ export function isStubMode(): boolean {
 }
 
 export function getRequiredEnvVars(): string[] {
-  if (isStubMode()) return [];
-  return [
+  const required = [
     "DATABASE_URL",
     "REDIS_URL",
     "SESSION_SECRET",
     "APP_URL",
-    "LLM_PROVIDER",
-    "LLM_API_KEY",
-    "TTS_PROVIDER",
-    "TTS_API_KEY",
   ];
+
+  if (process.env.NODE_ENV === "production") {
+    required.push(
+      "S3_ENDPOINT",
+      "S3_BUCKET",
+      "S3_ACCESS_KEY_ID",
+      "S3_SECRET_ACCESS_KEY"
+    );
+  }
+
+  return required;
 }
 
 export function checkStartupConfig(): { ok: boolean; missing: string[] } {
   const required = getRequiredEnvVars();
   const missing = required.filter((k) => !process.env[k] || process.env[k]!.trim() === "");
+  if (!isStubMode()) {
+    missing.push("STUB_MODE=true (live LLM/TTS integrations are not implemented)");
+  }
   if (process.env.SESSION_SECRET && process.env.SESSION_SECRET.length < 32) {
     missing.push("SESSION_SECRET (must be >= 32 chars)");
   }

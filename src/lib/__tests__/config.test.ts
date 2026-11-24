@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { checkStartupConfig, isStubMode } from "../src/lib/config";
+import { checkStartupConfig, getRequiredEnvVars } from "../config";
 
 describe("startup config", () => {
   const original = { ...process.env };
@@ -12,11 +12,22 @@ describe("startup config", () => {
     process.env = original;
   });
 
-  it("passes in stub mode", () => {
+  it("still requires infrastructure in stub mode", () => {
     process.env.STUB_MODE = "true";
-    const { ok, missing } = checkStartupConfig();
-    expect(ok).toBe(true);
-    expect(missing.length).toBe(0);
+    process.env.NODE_ENV = "development";
+    expect(getRequiredEnvVars()).toEqual([
+      "DATABASE_URL",
+      "REDIS_URL",
+      "SESSION_SECRET",
+      "APP_URL",
+    ]);
+  });
+
+  it("requires persistent object storage in production", () => {
+    process.env.STUB_MODE = "true";
+    process.env.NODE_ENV = "production";
+    expect(getRequiredEnvVars()).toContain("S3_SECRET_ACCESS_KEY");
+    expect(checkStartupConfig().missing).toContain("S3_BUCKET");
   });
 
   it("fails when required vars missing in non-stub", () => {
@@ -24,6 +35,8 @@ describe("startup config", () => {
     delete process.env.LLM_API_KEY;
     const { ok, missing } = checkStartupConfig();
     expect(ok).toBe(false);
-    expect(missing).toContain("LLM_API_KEY");
+    expect(missing).toContain(
+      "STUB_MODE=true (live LLM/TTS integrations are not implemented)"
+    );
   });
 });

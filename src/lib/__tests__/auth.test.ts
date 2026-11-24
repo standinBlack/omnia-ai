@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateSessionToken, hashToken } from "../src/lib/auth";
+import { generateSessionToken, hashToken } from "../auth";
 
 describe("session tokens", () => {
   it("generates 64 hex chars (32 bytes)", () => {

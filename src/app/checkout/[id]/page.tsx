@@ -3,14 +3,29 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
+interface CheckoutData {
+  payment: {
+    id: string;
+    reference: string;
+    amount: number;
+    status: string;
+    planName: string;
+  };
+  bank: {
+    accountName: string;
+    accountNumber: string;
+    bankName: string;
+  };
+}
+
 export default function CheckoutPage() {
-  const params = useParams();
-  const [data, setData] = useState<any>(null);
+  const params = useParams<{ id: string }>();
+  const [data, setData] = useState<CheckoutData | null>(null);
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    const id = params.id as string;
+    const id = params.id;
     fetch(`/api/payments/${id}`).then(async (r) => {
       if (r.ok) setData(await r.json());
     });

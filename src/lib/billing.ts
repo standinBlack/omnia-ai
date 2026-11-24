@@ -27,7 +27,6 @@ export async function expireSubscriptions() {
 export async function sendReminders() {
   const now = new Date();
   const in3 = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-  const in1 = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000);
 
   const subs = await prisma.subscription.findMany({
     where: {

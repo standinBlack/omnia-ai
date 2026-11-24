@@ -11,10 +11,17 @@ interface Usage {
   planName: string;
 }
 
+interface VideoSummary {
+  id: string;
+  title: string | null;
+  status: string;
+  targetSeconds: number;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [usage, setUsage] = useState<Usage | null>(null);
-  const [videos, setVideos] = useState<any[]>([]);
+  const [videos, setVideos] = useState<VideoSummary[]>([]);
 
   useEffect(() => {
     fetch("/api/me").then(async (r) => {
@@ -28,7 +35,7 @@ export default function DashboardPage() {
     fetch("/api/videos").then(async (r) => {
       if (r.ok) {
         const d = await r.json();
-        setVideos(d.videos || []);
+        setVideos(d.videos);
       }
     });
   }, [router]);

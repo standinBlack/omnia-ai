@@ -3,24 +3,26 @@ version: "3.9"
 services:
   mongodb:
     image: mongo:7
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: omnia
-      MONGO_INITDB_ROOT_PASSWORD: omnia_dev_password
-      MONGO_INITDB_DATABASE: omnia
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongodb_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --quiet --eval "try { rs.status().ok } catch (e) {
+          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]}).ok
+          }" | grep -q 1
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
 
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
